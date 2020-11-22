@@ -1,0 +1,4 @@
+C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csprojAssemblyReference.cache
+C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.UI.Components.ResetOrNotSettings.resources
+C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csproj.GenerateResource.cache
+C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csproj.CoreCompileInputs.cache
