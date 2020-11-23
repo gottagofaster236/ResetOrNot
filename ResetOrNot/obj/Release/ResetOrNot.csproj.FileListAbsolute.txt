@@ -1,4 +1,3 @@
-C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Release\ResetOrNot.csprojAssemblyReference.cache
 C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Release\ResetOrNot.UI.Components.ResetOrNotSettings.resources
 C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Release\ResetOrNot.csproj.GenerateResource.cache
 C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Release\ResetOrNot.csproj.CoreCompileInputs.cache
@@ -9,3 +8,4 @@ C:\Users\Пользователь\source\repos\gottagofaster236\bin\Release\Comp
 C:\Users\Пользователь\source\repos\gottagofaster236\bin\Release\Components\x64\livesplit_core.dll
 C:\Users\Пользователь\source\repos\gottagofaster236\bin\Release\Components\ResetOrNot.dll
 C:\Users\Пользователь\source\repos\gottagofaster236\bin\Release\Components\ResetOrNot.pdb
+C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Release\ResetOrNot.csprojAssemblyReference.cache

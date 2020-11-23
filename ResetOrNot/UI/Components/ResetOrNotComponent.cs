@@ -9,6 +9,7 @@ using LiveSplit.UI;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Xml;
+using static ResetOrNot.UI.Components.ResetOrNotCalculator;
 
 namespace ResetOrNot.UI.Components
 {
@@ -17,7 +18,7 @@ namespace ResetOrNot.UI.Components
         protected InfoTextComponent InternalComponent { get; set; }
         protected ResetOrNotSettings Settings { get; set; }
         protected LiveSplitState State;
-        protected Random rand;
+        protected ResetOrNotCalculator resetOrNotCalculator;
         protected string category;
 
         string IComponent.ComponentName => "Reset Or Not";
@@ -51,18 +52,19 @@ namespace ResetOrNot.UI.Components
         public ResetOrNotComponent(LiveSplitState state)
         {
             State = state;
-            InternalComponent = new InfoTextComponent("Reset Or Not                   .", "0.0%")
+            InternalComponent = new InfoTextComponent("Reset Or Not", "Reset")
             {
                 AlternateNameText = new string[]
                 {
                     "Reset Or Not",
-                    "PB%:"
+                    "Should reset?"
                 }
             };
             Settings = new ResetOrNotSettings();
             Settings.SettingChanged += OnSettingChanged;
-            rand = new Random();
             category = State.Run.GameName + State.Run.CategoryName;
+
+            resetOrNotCalculator = new ResetOrNotCalculator(State, Settings);
 
             state.OnSplit += OnSplit;
             state.OnReset += OnReset;
@@ -109,139 +111,23 @@ namespace ResetOrNot.UI.Components
             Recalculate();
         }
 
-        protected void Recalculate()
+        protected async void Recalculate()
         {
-            // Get the current Personal Best, if it exists
-            Time pb = State.Run.Last().PersonalBestSplitTime;
-            
-            if(pb[State.CurrentTimingMethod] == TimeSpan.Zero)
+            ResetAction shouldReset = await resetOrNotCalculator.ShouldReset();
+            string resultText = "";
+            switch (shouldReset)
             {
-                // No personal best, so any run will PB
-                InternalComponent.InformationValue = "100%";
-                return;
+                case ResetAction.CONTINUE_RUN:
+                    resultText = "Continue the run";
+                    break;
+                case ResetAction.RESET:
+                    resultText = "Reset";
+                    break;
+                case ResetAction.NOT_APPLICABLE:
+                    resultText = "N/A";
+                    break;
             }
-
-            // Create the lists of split times
-            List<Time?>[] splits = new List<Time?>[State.Run.Count];
-            for(int i=0; i<State.Run.Count; i++)
-            {
-                splits[i] = new List<Time?>();
-            }
-
-            // Find the range of attempts to gather times from
-            int lastAttempt = State.Run.AttemptHistory.Count;
-            int runCount = State.Run.AttemptHistory.Count;
-            if (!Settings.IgnoreRunCount)
-            {
-                runCount = State.Run.AttemptCount;
-                if (runCount > State.Run.AttemptHistory.Count)
-                {
-                    runCount = State.Run.AttemptHistory.Count;
-                }
-            }
-            int firstAttempt = lastAttempt / 2;
-            if(Settings.UseFixedAttempts)
-            {
-                // Fixed number of attempts
-                firstAttempt = lastAttempt - Settings.AttemptCount;
-                
-                if (firstAttempt < State.Run.GetMinSegmentHistoryIndex())
-                {
-                    firstAttempt = State.Run.GetMinSegmentHistoryIndex();
-                }
-            }
-            else
-            {
-                // Percentage of attempts
-                firstAttempt = lastAttempt - runCount * Settings.AttemptCount / 100;
-                if(firstAttempt < State.Run.GetMinSegmentHistoryIndex())
-                {
-                    firstAttempt = State.Run.GetMinSegmentHistoryIndex();
-                }
-            }
-
-            // Gather split times
-            for (int a = firstAttempt; a < lastAttempt; a++)
-            {
-                int lastSegment = -1;
-
-                // Get split times from a single attempt
-                for (int segment = 0; segment < State.Run.Count; segment++)
-                {
-                    if (State.Run[segment].SegmentHistory == null || State.Run[segment].SegmentHistory.Count == 0)
-                    {
-                        InternalComponent.InformationValue = "-";
-                        return;
-                    }
-
-                    if (State.Run[segment].SegmentHistory.ContainsKey(a) && State.Run[segment].SegmentHistory[a][State.CurrentTimingMethod] > TimeSpan.Zero)
-                    {
-                        splits[segment].Add(State.Run[segment].SegmentHistory[a]);
-                        lastSegment = segment;
-                    }
-                }
-
-                if (lastSegment < State.Run.Count - 1)
-                {
-                    // Run didn't finish, add "reset" for the last known split
-                    splits[lastSegment + 1].Add(null);
-                }
-            }
-
-            // Calculate probability of PB
-            int success = 0;
-            for (int i = 0; i < 10000; i++)
-            {
-                // Get current time as a baseline
-                Time test = State.CurrentTime;
-                if (test[State.CurrentTimingMethod] < TimeSpan.Zero)
-                {
-                    test[State.CurrentTimingMethod] = TimeSpan.Zero;
-                }
-
-                // Add random split times for each remaining segment
-                for (int segment = 0; segment < State.Run.Count; segment++)
-                {
-                    if (segment < State.CurrentSplitIndex)
-                    {
-                        continue;
-                    }
-
-                    if(splits[segment].Count == 0)
-                    {
-                        // This split contains no split times, so we cannot calculate a probability
-                        InternalComponent.InformationValue = "-";
-                        return;
-                    }
-
-                    int attempt = rand.Next(splits[segment].Count);
-                    Time? split = splits[segment][attempt];
-                    if (split == null)
-                    {
-                        // Split is a reset, so count it as a failure
-                        test += pb;
-                        break;
-                    }
-                    else
-                    {
-                        // Add the split time
-                        test += split.Value;
-                    }
-                }
-
-                if (test[State.CurrentTimingMethod] < pb[State.CurrentTimingMethod])
-                {
-                    success++;
-                }
-            }
-
-            double prob = success / 10000.0;
-            string text = (prob * 100.0).ToString() + "%";
-            if (Settings.DisplayOdds && prob > 0)
-            {
-                text += " (1 in " + Math.Round(1 / prob, 2).ToString() + ")";
-            }
-            InternalComponent.InformationValue = text;
+            InternalComponent.InformationValue = resultText;
         }
 
         void IComponent.DrawHorizontal(Graphics g, LiveSplitState state, float height, Region clipRegion)

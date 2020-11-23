@@ -17,8 +17,8 @@ namespace ResetOrNot.UI.Components
         public Boolean UsePercentOfAttempts { get; set; }
         public Boolean UseFixedAttempts { get; set; }
         public int AttemptCount { get; set; }
-        public bool DisplayOdds { get; set; }
         public bool IgnoreRunCount { get; set; }
+        public int TimeToReset { get; set; }
 
         public event EventHandler SettingChanged;
 
@@ -29,12 +29,13 @@ namespace ResetOrNot.UI.Components
             UsePercentOfAttempts = true;
             UseFixedAttempts = false;
             AttemptCount = 50;
+            TimeToReset = 15;
 
             PercentOfAttempts.DataBindings.Add("Checked", this, "UsePercentOfAttempts", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
             FixedAttempts.DataBindings.Add("Checked", this, "UseFixedAttempts", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
             AttemptCountBox.DataBindings.Add("Value", this, "AttemptCount", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
-            DisplayOddsCheckbox.DataBindings.Add("Checked", this, "DisplayOdds", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
             IgnoreRunCountBox.DataBindings.Add("Checked", this, "IgnoreRunCount", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
+            TimeToResetCountBox.DataBindings.Add("Value", this, "TimeToReset", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
         }
 
         private void OnSettingChanged(object sender, BindingCompleteEventArgs e)
@@ -57,8 +58,8 @@ namespace ResetOrNot.UI.Components
                 SettingsHelper.CreateSetting(document, parent, "AttemptCount", AttemptCount) ^
                 SettingsHelper.CreateSetting(document, parent, "UsePercentOfAttempts", UsePercentOfAttempts) ^
                 SettingsHelper.CreateSetting(document, parent, "UseFixedAttempts", UseFixedAttempts) ^
-                SettingsHelper.CreateSetting(document, parent, "DisplayOdds", DisplayOdds) ^
-                SettingsHelper.CreateSetting(document, parent, "IgnoreRunCount", IgnoreRunCount);
+                SettingsHelper.CreateSetting(document, parent, "IgnoreRunCount", IgnoreRunCount) ^
+                SettingsHelper.CreateSetting(document, parent, "TimeToReset", TimeToReset);
         }
 
         internal void SetSettings(XmlNode settings)
@@ -66,8 +67,8 @@ namespace ResetOrNot.UI.Components
             AttemptCount = SettingsHelper.ParseInt(settings["AttemptCount"]);
             UsePercentOfAttempts = SettingsHelper.ParseBool(settings["UsePercentOfAttempts"]);
             UseFixedAttempts = SettingsHelper.ParseBool(settings["UseFixedAttempts"]);
-            DisplayOdds = SettingsHelper.ParseBool(settings["DisplayOdds"]);
             IgnoreRunCount = SettingsHelper.ParseBool(settings["IgnoreRunCount"]);
+            TimeToReset = SettingsHelper.ParseInt(settings["TimeToReset"]);
         }
     }
 }
