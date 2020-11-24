@@ -1,7 +1,5 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\ResetOrNot",
     "\\ResetOrNot\\obj",
     "\\ResetOrNot\\obj\\Debug",
     "\\ResetOrNot\\obj\\Release",
@@ -9,6 +7,5 @@
     "\\ResetOrNot\\UI",
     "\\ResetOrNot\\UI\\Components"
   ],
-  "SelectedNode": "\\ResetOrNot\\PBChance.csproj",
   "PreviewInSolutionExplorer": false
 }

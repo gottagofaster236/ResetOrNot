@@ -14,7 +14,8 @@ namespace ResetOrNot.UI.Components
         private List<TimeSpan>[] splits;
         private TimeSpan[] resetTimes;  // worst acceptable time (from the beginning of the run) at the end of each split
         private TimeSpan PB;
-        private const int simulationIterations = 100_000;
+        private const int maxSimulationIterations = 10_000_000;
+        private static readonly TimeSpan infiniteTimeSpan = TimeSpan.FromDays(1000);
 
         private LiveSplitState state;
         private ResetOrNotSettings settings;
@@ -66,20 +67,18 @@ namespace ResetOrNot.UI.Components
             if (PB == TimeSpan.Zero)
             {
                 // No personal best, so any run will PB. Don't reset!
-                TimeSpan infinity = TimeSpan.FromDays(1000);
-                resetTimes = Enumerable.Repeat(infinity, splits.Length).ToArray();
+                resetTimes = Enumerable.Repeat(infiniteTimeSpan, splits.Length).ToArray();
                 return;
             }
 
             resetTimes = new TimeSpan[splits.Length];
 
-            TimeSpan targetPBTime = TimeSpan.FromHours(20);
+            TimeSpan targetPBTime = TimeSpan.FromHours(1000);
             CalculateResetTimes(targetPBTime);
-            (TimeSpan averageResetTime, double pbProbability) = RunSimulation(-1, TimeSpan.Zero, targetPBTime);
-            TimeSpan actualPBTime = TimeSpan.Zero;
-            if (pbProbability != 0)
-                actualPBTime = TimeSpan.FromTicks((long) (averageResetTime.Ticks / pbProbability));
-
+            (TimeSpan averageResetTime, double pbProbability) = RunSimulation(-1, TimeSpan.Zero);
+            TimeSpan actualPBTime = Divide(averageResetTime, pbProbability);
+            Console.WriteLine("PB probability: " + pbProbability);
+            Console.WriteLine("average reset time: " + averageResetTime);
             Console.WriteLine("actualPbTime: " + actualPBTime);
             foreach (var time in resetTimes)
             {
@@ -98,7 +97,7 @@ namespace ResetOrNot.UI.Components
                 // do a binary search to find the reset time for this split
                 for (int iteration = 0; iteration < 20; iteration++)
                 {
-                    TimeSpan medium = TimeSpan.FromTicks((minimumResetTime.Ticks + maximumResetTime.Ticks) / 2);
+                    TimeSpan medium = Divide(minimumResetTime + maximumResetTime, 2);
                     if (ShouldReset(segment, medium, targetPBTime))
                         maximumResetTime = medium;
                     else
@@ -112,15 +111,15 @@ namespace ResetOrNot.UI.Components
         // assuming that the reset time for next segments were counted already
         private bool ShouldReset(int segment, TimeSpan currentTime, TimeSpan targetPBTime)
         {
-            (TimeSpan averageTimeBeforeReset, _) = RunSimulation(segment, currentTime, targetPBTime);
+            (TimeSpan averageTimeBeforeReset, double pbProbability) = RunSimulation(segment, currentTime);
             TimeSpan resetTimeSave = averageTimeBeforeReset;
-            TimeSpan pbTimeLoss = targetPBTime;
+            TimeSpan pbTimeLoss = Divide(targetPBTime, 1 / pbProbability);  // should've implemented multiply
             bool shouldReset = (resetTimeSave > pbTimeLoss);
             return shouldReset;
         }
 
         private (TimeSpan averageTimeBeforeReset, double pbProbability) RunSimulation
-            (int startSegment, TimeSpan currentTime, TimeSpan targetPBTime)
+            (int startSegment, TimeSpan currentTime)
         {
             // calculating average time before reset
             TimeSpan timeBeforeResetSum = TimeSpan.Zero;
@@ -128,7 +127,8 @@ namespace ResetOrNot.UI.Components
 
             int amountOfPBs = 0;
 
-            for (int iteration = 0; iteration < simulationIterations; iteration++)
+            int iteration;
+            for (iteration = 0; iteration < maxSimulationIterations; iteration++)
             {
                 TimeSpan resultTime = currentTime;
                 for (int segment = startSegment + 1; segment < splits.Length; segment++)
@@ -142,6 +142,7 @@ namespace ResetOrNot.UI.Components
                         TimeSpan timeBeforeReset = resetTimes[segment] - currentTime;
                         timeBeforeReset += TimeSpan.FromSeconds(settings.TimeToReset);
                         timeBeforeResetSum += timeBeforeReset;
+                        break;
                     }
                     else
                     {
@@ -150,17 +151,15 @@ namespace ResetOrNot.UI.Components
                         {
                             // this was the last split
                             amountOfPBs++;
+                            if (amountOfPBs >= 50)
+                                break;
                         }
                     }
                 }
             }
 
-            TimeSpan averageTimeBeforeReset = TimeSpan.Zero;
-            if (amountOfResets > 0)
-            {
-                averageTimeBeforeReset = TimeSpan.FromTicks(timeBeforeResetSum.Ticks / amountOfResets);
-            }
-            double pbProbability = (double)amountOfPBs / simulationIterations;
+            TimeSpan averageTimeBeforeReset = Divide(timeBeforeResetSum, amountOfResets);
+            double pbProbability = (double)amountOfPBs / iteration;
             return (averageTimeBeforeReset, pbProbability);
         }
 
@@ -238,8 +237,17 @@ namespace ResetOrNot.UI.Components
             return splits;
         }
 
-
-
+        private static TimeSpan Divide(TimeSpan timeSpan, double divisor)
+        {
+            if (divisor == 0)
+            {
+                return infiniteTimeSpan;
+            }
+            else
+            {
+                return TimeSpan.FromTicks((long) (timeSpan.Ticks / divisor));
+            }
+        }
 
 
         // Debug stuff

@@ -1,5 +1,5 @@
 # ResetOrNot
-A fork of PBChance in development. Will display whether you should reset or not at a given moment of time.
+A fork of PBChance in development. **Will** display whether you should reset or not at a given moment of time.
 
 ## Old Readme:
 
