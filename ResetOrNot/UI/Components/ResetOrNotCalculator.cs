@@ -2,6 +2,7 @@
 using LiveSplit.Options;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -14,50 +15,72 @@ namespace ResetOrNot.UI.Components
         private List<TimeSpan>[] splits;
         private TimeSpan[] resetTimes;  // worst acceptable time (from the beginning of the run) at the end of each split
         private TimeSpan PB;
-        private const int maxSimulationIterations = 10_000_000;
+        private const int simulationIterations = 200_000;
         private static readonly TimeSpan infiniteTimeSpan = TimeSpan.FromDays(1000);
 
         private LiveSplitState state;
         private ResetOrNotSettings settings;
         private Random rand;
+        private bool isRecalculating = false;
 
         public ResetOrNotCalculator(LiveSplitState state, ResetOrNotSettings settings)
         {
             this.state = state;
             this.settings = settings;
             this.rand = new Random();
+            #if DEBUG
             AllocConsole();
+            #endif
         }
 
         public enum ResetAction
         {
             RESET,
             CONTINUE_RUN,
+            CALCULATING,  // "Please wait..."
             NOT_APPLICABLE
         }
 
-        public async Task<ResetAction> ShouldReset()
+        public ResetAction ShouldReset()
         {
-            // for now doing it like this
-            if (resetTimes == null)  // fixme!! reset times may be null if something goes wrong!
-                await CalculateResetTimes();
+            if (isRecalculating)
+                return ResetAction.CALCULATING;
             if (resetTimes == null)
                 return ResetAction.NOT_APPLICABLE;
             if (state.CurrentSplitIndex == -1)
                 return ResetAction.NOT_APPLICABLE;
 
-            TimeSpan currentTime = (TimeSpan)state.CurrentSplit.SplitTime[state.CurrentTimingMethod];
+            TimeSpan? currentTime = state.CurrentTime[state.CurrentTimingMethod];
             if (currentTime < resetTimes[state.CurrentSplitIndex])
                 return ResetAction.CONTINUE_RUN;
             else
                 return ResetAction.RESET;
         }
 
-        public async Task CalculateResetTimes()
+        public void CalculateResetTimes()
         {
+            Task.Run(CalculateResetTimesSync);
+        }
+
+        private void CalculateResetTimesSync()
+        {
+            lock (this)
+            {
+                if (isRecalculating)
+                    return;
+                isRecalculating = true;
+            }
+
+            if (!settings.SettingsLoaded)
+            {
+                isRecalculating = false;
+                return;
+            }
+
             splits = GetSplitTimes();
             if (splits == null) {  // Data for some of the splits is missing
                 resetTimes = null;
+                isRecalculating = false;
                 return;
             }
 
@@ -68,22 +91,29 @@ namespace ResetOrNot.UI.Components
             {
                 // No personal best, so any run will PB. Don't reset!
                 resetTimes = Enumerable.Repeat(infiniteTimeSpan, splits.Length).ToArray();
+                isRecalculating = false;
                 return;
             }
 
             resetTimes = new TimeSpan[splits.Length];
 
-            TimeSpan targetPBTime = TimeSpan.FromHours(1000);
-            CalculateResetTimes(targetPBTime);
-            (TimeSpan averageResetTime, double pbProbability) = RunSimulation(-1, TimeSpan.Zero);
-            TimeSpan actualPBTime = Divide(averageResetTime, pbProbability);
-            Console.WriteLine("PB probability: " + pbProbability);
-            Console.WriteLine("average reset time: " + averageResetTime);
-            Console.WriteLine("actualPbTime: " + actualPBTime);
-            foreach (var time in resetTimes)
+            TimeSpan targetPBTime = infiniteTimeSpan;
+            // targetPBTime is estimated time needed to PB (sum of runs)
+            for (int iteration = 0; iteration < 5; iteration++)
             {
-                Console.WriteLine("Reset time: " + time);
+                CalculateResetTimes(targetPBTime);
+                (TimeSpan averageResetTime, double pbProbability) = RunSimulation(-1, TimeSpan.Zero);
+                targetPBTime = Divide(averageResetTime, pbProbability);
+
+                foreach (var time in resetTimes)
+                {
+                    Console.WriteLine("Reset time: " + time);
+                }
+                Console.WriteLine("PB probability: " + pbProbability);
+                Console.WriteLine("average reset time: " + averageResetTime);
+                Console.WriteLine("targetPBTime: " + targetPBTime);
             }
+            isRecalculating = false;
         }
 
         // Calculate reset times, if we assume it's possible to achieve a PB in targetPBTime (on average)
@@ -93,7 +123,7 @@ namespace ResetOrNot.UI.Components
             for (int segment = splits.Length - 2; segment >= 0; segment--)
             {
                 TimeSpan minimumResetTime = TimeSpan.Zero;
-                TimeSpan maximumResetTime = PB;
+                TimeSpan maximumResetTime = resetTimes[segment + 1];
                 // do a binary search to find the reset time for this split
                 for (int iteration = 0; iteration < 20; iteration++)
                 {
@@ -128,7 +158,7 @@ namespace ResetOrNot.UI.Components
             int amountOfPBs = 0;
 
             int iteration;
-            for (iteration = 0; iteration < maxSimulationIterations; iteration++)
+            for (iteration = 0; iteration < simulationIterations; iteration++)
             {
                 TimeSpan resultTime = currentTime;
                 for (int segment = startSegment + 1; segment < splits.Length; segment++)
@@ -137,10 +167,9 @@ namespace ResetOrNot.UI.Components
                     TimeSpan timeIfNotReset = resultTime + splitTime;
                     if (timeIfNotReset >= resetTimes[segment])
                     {
-                        // this is a reset
+                        // This is a reset
                         amountOfResets++;
-                        TimeSpan timeBeforeReset = resetTimes[segment] - currentTime;
-                        timeBeforeReset += TimeSpan.FromSeconds(settings.TimeToReset);
+                        TimeSpan timeBeforeReset = resetTimes[segment] - currentTime + TimeSpan.FromSeconds(settings.TimeToReset);
                         timeBeforeResetSum += timeBeforeReset;
                         break;
                     }
@@ -149,10 +178,8 @@ namespace ResetOrNot.UI.Components
                         resultTime = timeIfNotReset;
                         if (segment == splits.Length - 1)
                         {
-                            // this was the last split
+                            // This was the last split. We would reset if it didn't PB.
                             amountOfPBs++;
-                            if (amountOfPBs >= 50)
-                                break;
                         }
                     }
                 }
@@ -182,7 +209,7 @@ namespace ResetOrNot.UI.Components
                 runCount = Math.Min(state.Run.AttemptCount, state.Run.AttemptHistory.Count);
             }
 
-            int firstAttempt = lastAttempt / 2;  // Using 50% of the attempts by default
+            int firstAttempt;
             if (settings.UseFixedAttempts)
             {
                 // Fixed number of attempts
@@ -241,7 +268,10 @@ namespace ResetOrNot.UI.Components
         {
             if (divisor == 0)
             {
-                return infiniteTimeSpan;
+                if (timeSpan > TimeSpan.Zero)
+                    return infiniteTimeSpan;
+                else  // 0 / 0
+                    return TimeSpan.Zero;
             }
             else
             {
@@ -249,15 +279,10 @@ namespace ResetOrNot.UI.Components
             }
         }
 
-
         // Debug stuff
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool AllocConsole();
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool FreeConsole();
     }
 }

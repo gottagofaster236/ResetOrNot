@@ -47,6 +47,7 @@ namespace ResetOrNot.UI.Components
         void IComponent.SetSettings(XmlNode settings)
         {
             Settings.SetSettings(settings);
+            resetOrNotCalculator.CalculateResetTimes();
         }
 
         public ResetOrNotComponent(LiveSplitState state)
@@ -73,47 +74,56 @@ namespace ResetOrNot.UI.Components
             state.OnStart += OnStart;
             state.RunManuallyModified += OnRunManuallyModified;
 
-            Recalculate();
+            // Update the "should reset" text every 200 ms (as it's a cheap operation)
+            System.Timers.Timer timer = new System.Timers.Timer();
+            timer.Interval = 200;
+            timer.Elapsed += (sender, e) =>
+            {
+                UpdateShouldResetText();
+            };
+            timer.Start();
         }
 
         private void OnRunManuallyModified(object sender, EventArgs e)
         {
-            Recalculate();
+            UpdateShouldResetText();
         }
 
         private void OnSettingChanged(object sender, EventArgs e)
         {
-            Recalculate();
+            resetOrNotCalculator.CalculateResetTimes();
+            UpdateShouldResetText();
         }
 
         private void OnStart(object sender, EventArgs e)
         {
-            Recalculate();
+            UpdateShouldResetText();
         }
 
         protected void OnUndoSplit(object sender, EventArgs e)
         {
-            Recalculate();
+            UpdateShouldResetText();
         }
 
         protected void OnSkipSplit(object sender, EventArgs e)
         {
-            Recalculate();
+            UpdateShouldResetText();
         }
 
         protected void OnReset(object sender, TimerPhase value)
         {
-            Recalculate();
+            resetOrNotCalculator.CalculateResetTimes();
+            UpdateShouldResetText();
         }
 
         protected void OnSplit(object sender, EventArgs e)
         {
-            Recalculate();
+            UpdateShouldResetText();
         }
 
-        protected async void Recalculate()
+        protected void UpdateShouldResetText()
         {
-            ResetAction shouldReset = await resetOrNotCalculator.ShouldReset();
+            ResetAction shouldReset = resetOrNotCalculator.ShouldReset();
             string resultText = "";
             switch (shouldReset)
             {
@@ -122,6 +132,9 @@ namespace ResetOrNot.UI.Components
                     break;
                 case ResetAction.RESET:
                     resultText = "Reset";
+                    break;
+                case ResetAction.CALCULATING:
+                    resultText = "Calculating...";
                     break;
                 case ResetAction.NOT_APPLICABLE:
                     resultText = "N/A";
@@ -155,16 +168,14 @@ namespace ResetOrNot.UI.Components
             string newCategory = State.Run.GameName + State.Run.CategoryName;
             if (newCategory != category)
             {
-                Recalculate();
+                resetOrNotCalculator.CalculateResetTimes();
+                UpdateShouldResetText();
                 category = newCategory;
             }
             
             InternalComponent.Update(invalidator, state, width, height, mode);
         }
 
-        void IDisposable.Dispose()
-        {
-            
-        }
+        void IDisposable.Dispose() { }
     }
 }

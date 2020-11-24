@@ -37,8 +37,10 @@
             this.TimeToResetCountBox = new System.Windows.Forms.NumericUpDown();
             this.ResetTimeLabel = new System.Windows.Forms.Label();
             this.SecondsLabel = new System.Windows.Forms.Label();
+            this.panel1 = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.AttemptCountBox)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TimeToResetCountBox)).BeginInit();
+            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // RecentLabel
@@ -53,19 +55,18 @@
             // PercentOfAttempts
             // 
             this.PercentOfAttempts.AutoSize = true;
-            this.PercentOfAttempts.Checked = true;
-            this.PercentOfAttempts.Location = new System.Drawing.Point(184, 32);
+            this.PercentOfAttempts.Location = new System.Drawing.Point(3, 4);
             this.PercentOfAttempts.Name = "PercentOfAttempts";
             this.PercentOfAttempts.Size = new System.Drawing.Size(118, 17);
             this.PercentOfAttempts.TabIndex = 2;
-            this.PercentOfAttempts.TabStop = true;
             this.PercentOfAttempts.Text = "Percent of Attempts";
             this.PercentOfAttempts.UseVisualStyleBackColor = true;
             // 
             // FixedAttempts
             // 
             this.FixedAttempts.AutoSize = true;
-            this.FixedAttempts.Location = new System.Drawing.Point(184, 55);
+            this.FixedAttempts.Checked = true;
+            this.FixedAttempts.Location = new System.Drawing.Point(3, 22);
             this.FixedAttempts.Name = "FixedAttempts";
             this.FixedAttempts.Size = new System.Drawing.Size(66, 17);
             this.FixedAttempts.TabIndex = 3;
@@ -115,7 +116,7 @@
             this.IgnoreRunCountBox.Text = "Use All Runs (Ignore Attempt Counter)";
             this.IgnoreRunCountBox.UseVisualStyleBackColor = true;
             // 
-            // ResetSecondsCountBox
+            // TimeToResetCountBox
             // 
             this.TimeToResetCountBox.Location = new System.Drawing.Point(127, 114);
             this.TimeToResetCountBox.Maximum = new decimal(new int[] {
@@ -128,7 +129,7 @@
             0,
             0,
             0});
-            this.TimeToResetCountBox.Name = "ResetSecondsCountBox";
+            this.TimeToResetCountBox.Name = "TimeToResetCountBox";
             this.TimeToResetCountBox.Size = new System.Drawing.Size(51, 20);
             this.TimeToResetCountBox.TabIndex = 7;
             this.TimeToResetCountBox.Value = new decimal(new int[] {
@@ -155,23 +156,33 @@
             this.SecondsLabel.TabIndex = 9;
             this.SecondsLabel.Text = "seconds";
             // 
+            // panel1
+            // 
+            this.panel1.Controls.Add(this.PercentOfAttempts);
+            this.panel1.Controls.Add(this.FixedAttempts);
+            this.panel1.Location = new System.Drawing.Point(184, 29);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(123, 43);
+            this.panel1.TabIndex = 10;
+            // 
             // ResetOrNotSettings
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.panel1);
             this.Controls.Add(this.SecondsLabel);
             this.Controls.Add(this.TimeToResetCountBox);
             this.Controls.Add(this.ResetTimeLabel);
             this.Controls.Add(this.IgnoreRunCountBox);
             this.Controls.Add(this.CreditsLabel);
             this.Controls.Add(this.AttemptCountBox);
-            this.Controls.Add(this.FixedAttempts);
-            this.Controls.Add(this.PercentOfAttempts);
             this.Controls.Add(this.RecentLabel);
             this.Name = "ResetOrNotSettings";
             this.Size = new System.Drawing.Size(310, 140);
             ((System.ComponentModel.ISupportInitialize)(this.AttemptCountBox)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.TimeToResetCountBox)).EndInit();
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -187,5 +198,6 @@
         private System.Windows.Forms.NumericUpDown TimeToResetCountBox;
         private System.Windows.Forms.Label ResetTimeLabel;
         private System.Windows.Forms.Label SecondsLabel;
+        private System.Windows.Forms.Panel panel1;
     }
 }

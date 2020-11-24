@@ -19,6 +19,7 @@ namespace ResetOrNot.UI.Components
         public int AttemptCount { get; set; }
         public bool IgnoreRunCount { get; set; }
         public int TimeToReset { get; set; }
+        public bool SettingsLoaded { get; set; } = false;
 
         public event EventHandler SettingChanged;
 
@@ -27,7 +28,7 @@ namespace ResetOrNot.UI.Components
             InitializeComponent();
 
             UsePercentOfAttempts = true;
-            UseFixedAttempts = false;
+            UseFixedAttempts = true;
             AttemptCount = 50;
             TimeToReset = 15;
 
@@ -69,6 +70,7 @@ namespace ResetOrNot.UI.Components
             UseFixedAttempts = SettingsHelper.ParseBool(settings["UseFixedAttempts"]);
             IgnoreRunCount = SettingsHelper.ParseBool(settings["IgnoreRunCount"]);
             TimeToReset = SettingsHelper.ParseInt(settings["TimeToReset"]);
+            SettingsLoaded = true;
         }
     }
 }
