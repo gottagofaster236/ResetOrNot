@@ -12,7 +12,7 @@ namespace ResetOrNot.UI.Components
 {
     class ResetOrNotCalculator
     {
-        private List<TimeSpan>[] splits;
+        private List<TimeSpan?>[] segments;
         private TimeSpan[] resetTimes;  // worst acceptable time (from the beginning of the run) at the end of each split
         private TimeSpan PB;
         private const int simulationIterations = 200_000;
@@ -77,8 +77,8 @@ namespace ResetOrNot.UI.Components
                 return;
             }
 
-            splits = GetSplitTimes();
-            if (splits == null) {  // Data for some of the splits is missing
+            segments = GetSegmentTimes();
+            if (segments == null) {  // Data for some of the splits is missing
                 resetTimes = null;
                 isRecalculating = false;
                 return;
@@ -90,12 +90,12 @@ namespace ResetOrNot.UI.Components
             if (PB == TimeSpan.Zero)
             {
                 // No personal best, so any run will PB. Don't reset!
-                resetTimes = Enumerable.Repeat(infiniteTimeSpan, splits.Length).ToArray();
+                resetTimes = Enumerable.Repeat(infiniteTimeSpan, segments.Length).ToArray();
                 isRecalculating = false;
                 return;
             }
 
-            resetTimes = new TimeSpan[splits.Length];
+            resetTimes = new TimeSpan[segments.Length];
 
             TimeSpan targetPBTime = infiniteTimeSpan;
             // targetPBTime is estimated time needed to PB (sum of runs)
@@ -119,8 +119,8 @@ namespace ResetOrNot.UI.Components
         // Calculate reset times, if we assume it's possible to achieve a PB in targetPBTime (on average)
         private void CalculateResetTimes(TimeSpan targetPBTime)
         {
-            resetTimes[splits.Length - 1] = PB;  // we want to PB at the end of last split
-            for (int segment = splits.Length - 2; segment >= 0; segment--)
+            resetTimes[segments.Length - 1] = PB;  // we want to PB at the end of last split
+            for (int segment = segments.Length - 2; segment >= 0; segment--)
             {
                 TimeSpan minimumResetTime = TimeSpan.Zero;
                 TimeSpan maximumResetTime = resetTimes[segment + 1];
@@ -156,16 +156,20 @@ namespace ResetOrNot.UI.Components
             int amountOfResets = 0;
 
             int amountOfPBs = 0;
-
-            int iteration;
-            for (iteration = 0; iteration < simulationIterations; iteration++)
+            
+            for (int iteration = 0; iteration < simulationIterations; iteration++)
             {
                 TimeSpan resultTime = currentTime;
-                for (int segment = startSegment + 1; segment < splits.Length; segment++)
+                for (int segment = startSegment + 1; segment < segments.Length; segment++)
                 {
-                    TimeSpan splitTime = splits[segment][rand.Next(splits[segment].Count)];
-                    TimeSpan timeIfNotReset = resultTime + splitTime;
-                    if (timeIfNotReset >= resetTimes[segment])
+                    TimeSpan? splitTime = segments[segment][rand.Next(segments[segment].Count)];
+                    TimeSpan? timeIfNotReset = null;
+                    if (splitTime != null)
+                    {
+                        timeIfNotReset = resultTime + splitTime;
+                    }
+
+                    if (splitTime == null || timeIfNotReset >= resetTimes[segment])
                     {
                         // This is a reset
                         amountOfResets++;
@@ -175,10 +179,10 @@ namespace ResetOrNot.UI.Components
                     }
                     else
                     {
-                        resultTime = timeIfNotReset;
-                        if (segment == splits.Length - 1)
+                        resultTime = (TimeSpan)timeIfNotReset;
+                        if (segment == segments.Length - 1)
                         {
-                            // This was the last split. We would reset if it didn't PB.
+                            // This was the last split. We would've reset if it didn't PB.
                             amountOfPBs++;
                         }
                     }
@@ -186,19 +190,19 @@ namespace ResetOrNot.UI.Components
             }
 
             TimeSpan averageTimeBeforeReset = Divide(timeBeforeResetSum, amountOfResets);
-            double pbProbability = (double)amountOfPBs / iteration;
+            double pbProbability = (double)amountOfPBs / simulationIterations;
             return (averageTimeBeforeReset, pbProbability);
         }
 
 
         // List of attempts for each split, or null if not enough information
-        private List<TimeSpan>[] GetSplitTimes()
+        private List<TimeSpan?>[] GetSegmentTimes()
         {
             // Create the lists of split times
-            List<TimeSpan>[] splits = new List<TimeSpan>[state.Run.Count];
+            List<TimeSpan?>[] segments = new List<TimeSpan?>[state.Run.Count];
             for (int i = 0; i < state.Run.Count; i++)
             {
-                splits[i] = new List<TimeSpan>();
+                segments[i] = new List<TimeSpan?>();
             }
 
             // Find the range of attempts to gather times from
@@ -231,37 +235,42 @@ namespace ResetOrNot.UI.Components
             }
 
             // Gather split times
-
-            for (int segment = 0; segment < state.Run.Count; segment++)
+            for (int attempt = firstAttempt; attempt < lastAttempt; attempt++)
             {
-                if (state.Run[segment].SegmentHistory == null || state.Run[segment].SegmentHistory.Count == 0)
-                {
-                    // No history for a segment
-                    return null;
-                }
+                int lastSegment = -1;
 
-                for (int attempt = firstAttempt; attempt < lastAttempt; attempt++)
+                // Get split times from a single attempt
+                for (int segment = 0; segment < state.Run.Count; segment++)
                 {
-                    if (state.Run[segment].SegmentHistory.ContainsKey(attempt))
+                    if (state.Run[segment].SegmentHistory == null || state.Run[segment].SegmentHistory.Count == 0)
                     {
-                        TimeSpan attemptTime = state.Run[segment].SegmentHistory[attempt][state.CurrentTimingMethod] ?? TimeSpan.Zero;
-                        if (attemptTime > TimeSpan.Zero)
-                            splits[segment].Add(attemptTime);
+                        // no attempts for a segment
+                        return null;
+                    }
+
+                    if (state.Run[segment].SegmentHistory.ContainsKey(attempt) && state.Run[segment].SegmentHistory[attempt][state.CurrentTimingMethod] > TimeSpan.Zero)
+                    {
+                        segments[segment].Add(state.Run[segment].SegmentHistory[attempt][state.CurrentTimingMethod]);
+                        lastSegment = segment;
                     }
                 }
-            }
 
-
-            foreach (var segmentAttempts in splits)
-            {
-                if (segmentAttempts.Count == 0)
+                if (lastSegment < state.Run.Count - 1)
                 {
-                    // No successful attempts for a segment
-                    return null;
+                    // Run didn't finish, add "reset" for the last known split
+                    segments[lastSegment + 1].Add(null);
                 }
             }
 
-            return splits;
+
+            foreach (var segmentAttempts in segments)
+            {
+                // Each attempt is a reset (null) - we can't calculate that
+                if (!segmentAttempts.Any(attempt => attempt != null))
+                    return null;
+            }
+
+            return segments;
         }
 
         private static TimeSpan Divide(TimeSpan timeSpan, double divisor)
