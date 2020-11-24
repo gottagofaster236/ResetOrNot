@@ -103,7 +103,7 @@ namespace ResetOrNot.UI.Components
             {
                 CalculateResetTimes(targetPBTime);
                 (TimeSpan averageResetTime, double pbProbability) = RunSimulation(-1, TimeSpan.Zero);
-                targetPBTime = Divide(averageResetTime, pbProbability);
+                targetPBTime = Divide(averageResetTime, pbProbability) + PB;
 
                 foreach (var time in resetTimes)
                 {
