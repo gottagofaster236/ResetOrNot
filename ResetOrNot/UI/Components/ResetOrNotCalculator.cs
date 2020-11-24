@@ -95,15 +95,24 @@ namespace ResetOrNot.UI.Components
                 return;
             }
 
-            resetTimes = new TimeSpan[segments.Length];
+            // finding the reset times configuration with best avg PB time
+            TimeSpan[] bestResetTimes = null;
+            TimeSpan resetTimesPBTime = TimeSpan.FromDays(2000);
 
             TimeSpan targetPBTime = infiniteTimeSpan;
             // targetPBTime is estimated time needed to PB (sum of runs)
             for (int iteration = 0; iteration < 5; iteration++)
             {
+                resetTimes = new TimeSpan[segments.Length];
                 CalculateResetTimes(targetPBTime);
                 (TimeSpan averageResetTime, double pbProbability) = RunSimulation(-1, TimeSpan.Zero);
                 targetPBTime = Divide(averageResetTime, pbProbability) + PB;
+
+                if (targetPBTime < resetTimesPBTime)
+                {
+                    resetTimesPBTime = targetPBTime;
+                    bestResetTimes = resetTimes;
+                }
 
                 foreach (var time in resetTimes)
                 {
@@ -113,6 +122,8 @@ namespace ResetOrNot.UI.Components
                 Console.WriteLine("average reset time: " + averageResetTime);
                 Console.WriteLine("targetPBTime: " + targetPBTime);
             }
+
+            resetTimes = bestResetTimes;
             isRecalculating = false;
         }
 
