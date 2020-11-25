@@ -128,16 +128,16 @@ namespace ResetOrNot.UI.Components
 
             switch (shouldReset.ResetAction)
             {
-                case ResetAction.START_THE_RUN:
-                    resultText = "Start the run";
+                case ResetAction.RUN_NOT_STARTED:
+                    resultText = "Run not started";
                     break;
                 case ResetAction.CONTINUE_RUN:
                     resultText = "Continue the run";
                     color = State.LayoutSettings.AheadGainingTimeColor;
                     TimeSpan timeBeforeReset = shouldReset.TimeBeforeReset;
-                    // display the time is less than 5 seconds is left before the reset
-                    if (timeBeforeReset < TimeSpan.FromSeconds(5))
-                        resultText += $" ({timeBeforeReset.Seconds}.{timeBeforeReset.Milliseconds / 100})";
+                    // display the time is less than a minute is left before the reset
+                    if (timeBeforeReset < TimeSpan.FromMinutes(1))
+                        resultText += $" (-{timeBeforeReset.Seconds}.{timeBeforeReset.Milliseconds / 100})";
                     break;
                 case ResetAction.RESET:
                     resultText = "Reset";

@@ -51,7 +51,7 @@ namespace ResetOrNot.UI.Components
         public enum ResetAction
         {
             CALCULATING,
-            START_THE_RUN,
+            RUN_NOT_STARTED,
             CONTINUE_RUN,
             RESET,
             NOT_APPLICABLE
@@ -67,7 +67,7 @@ namespace ResetOrNot.UI.Components
                     return ResetAction.NOT_APPLICABLE;
             }
             if (state.CurrentSplitIndex == -1)
-                return ResetAction.START_THE_RUN;
+                return ResetAction.RUN_NOT_STARTED;
 
             TimeSpan currentTime = state.CurrentTime[state.CurrentTimingMethod].Value;
             TimeSpan timeLeft = resetTimes[state.CurrentSplitIndex] - currentTime;
