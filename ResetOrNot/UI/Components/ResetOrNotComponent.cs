@@ -97,6 +97,12 @@ namespace ResetOrNot.UI.Components
 
         private void OnStart(object sender, EventArgs e)
         {
+            // if we had no settings (first run), the calculation may have not started
+            if (!resetOrNotCalculator.HasDoneCalculatingBefore)
+            {
+                Settings.SettingsLoaded = true;
+                resetOrNotCalculator.CalculateResetTimes();
+            }
             UpdateShouldResetText();
         }
 
@@ -127,6 +133,9 @@ namespace ResetOrNot.UI.Components
             string resultText = "";
             switch (shouldReset)
             {
+                case ResetAction.START_THE_RUN:
+                    resultText = "Start the run";
+                    break;
                 case ResetAction.CONTINUE_RUN:
                     resultText = "Continue the run";
                     break;
@@ -168,7 +177,7 @@ namespace ResetOrNot.UI.Components
             string newCategory = State.Run.GameName + State.Run.CategoryName;
             if (newCategory != category)
             {
-                resetOrNotCalculator.CalculateResetTimes();
+                resetOrNotCalculator.OnCategoryChanged(newCategory);
                 UpdateShouldResetText();
                 category = newCategory;
             }

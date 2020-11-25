@@ -14,8 +14,8 @@ namespace ResetOrNot.UI.Components
 {
     public partial class ResetOrNotSettings : UserControl
     {
-        public Boolean UsePercentOfAttempts { get; set; }
-        public Boolean UseFixedAttempts { get; set; }
+        public bool UsePercentOfAttempts { get; set; }
+        public bool UseFixedAttempts { get; set; }
         public int AttemptCount { get; set; }
         public bool IgnoreRunCount { get; set; }
         public int TimeToReset { get; set; }
@@ -30,7 +30,7 @@ namespace ResetOrNot.UI.Components
             UsePercentOfAttempts = true;
             UseFixedAttempts = true;
             AttemptCount = 50;
-            TimeToReset = 15;
+            TimeToReset = 25;
 
             PercentOfAttempts.DataBindings.Add("Checked", this, "UsePercentOfAttempts", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
             FixedAttempts.DataBindings.Add("Checked", this, "UseFixedAttempts", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
