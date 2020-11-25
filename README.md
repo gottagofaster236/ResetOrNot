@@ -1,6 +1,9 @@
 # ResetOrNot
 Displays whether you should reset or not at a given moment of time.
 
+## Component in action:
+![screenshot](https://user-images.githubusercontent.com/55288842/100280825-db327f00-2f79-11eb-82c2-e042c95ede36.png)
+
 ## Installation:
 
 1. Place [ResetOrNot.dll](https://github.com/gottagofaster236/ResetOrNot/releases/latest) into the Components directory of your LiveSplit installation.
@@ -10,6 +13,6 @@ Displays whether you should reset or not at a given moment of time.
 
 ## Troubleshooting:
 
-**It always displays "0%" or "-"**
+**It always displays "N/A"**
 
-You may need to configure the plugin to use a different number of attempts. For instance, it may not be reading any attempts in which you've completed a run. Additionally, you may have reset your split data at some point, which will remove the data necessary for ResetOrNot to calculate its probability. If you want to debug the issue, try opening your splits file in a text editor (it's XML formatted). You may be able to spot missing splits, and it will inform you how to configure the ResetOrNot component.
+You may need to configure the plugin to use a different number of attempts. For instance, it may not be reading any attempts in which you've completed a run. Additionally, you may have reset your split data at some point, which will remove the data necessary for ResetOrNot to calculate its probability.
