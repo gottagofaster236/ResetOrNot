@@ -53,14 +53,7 @@ namespace ResetOrNot.UI.Components
         public ResetOrNotComponent(LiveSplitState state)
         {
             State = state;
-            InternalComponent = new InfoTextComponent("Reset Or Not", "Reset")
-            {
-                AlternateNameText = new string[]
-                {
-                    "Reset Or Not",
-                    "Should reset?"
-                }
-            };
+            InternalComponent = new InfoTextComponent("Reset Or Not", "Reset");
             Settings = new ResetOrNotSettings();
             Settings.SettingChanged += OnSettingChanged;
             category = State.Run.GameName + State.Run.CategoryName;
@@ -74,9 +67,9 @@ namespace ResetOrNot.UI.Components
             state.OnStart += OnStart;
             state.RunManuallyModified += OnRunManuallyModified;
 
-            // Update the "should reset" text every 200 ms (as it's a cheap operation)
+            // Update the "should reset" text every 100 ms (as it's a cheap operation)
             System.Timers.Timer timer = new System.Timers.Timer();
-            timer.Interval = 200;
+            timer.Interval = 100;
             timer.Elapsed += (sender, e) =>
             {
                 UpdateShouldResetText();
@@ -129,18 +122,26 @@ namespace ResetOrNot.UI.Components
 
         protected void UpdateShouldResetText()
         {
-            ResetAction shouldReset = resetOrNotCalculator.ShouldReset();
+            ResetResult shouldReset = resetOrNotCalculator.ShouldReset();
             string resultText = "";
-            switch (shouldReset)
+            Color color = State.LayoutSettings.TextColor;
+
+            switch (shouldReset.ResetAction)
             {
                 case ResetAction.START_THE_RUN:
                     resultText = "Start the run";
                     break;
                 case ResetAction.CONTINUE_RUN:
                     resultText = "Continue the run";
+                    color = State.LayoutSettings.AheadGainingTimeColor;
+                    TimeSpan timeBeforeReset = shouldReset.TimeBeforeReset;
+                    // display the time is less than 5 seconds is left before the reset
+                    if (timeBeforeReset < TimeSpan.FromSeconds(5))
+                        resultText += $" ({timeBeforeReset.Seconds}.{timeBeforeReset.Milliseconds / 100})";
                     break;
                 case ResetAction.RESET:
                     resultText = "Reset";
+                    color = State.LayoutSettings.BehindLosingTimeColor;
                     break;
                 case ResetAction.CALCULATING:
                     resultText = "Calculating...";
@@ -150,6 +151,7 @@ namespace ResetOrNot.UI.Components
                     break;
             }
             InternalComponent.InformationValue = resultText;
+            InternalComponent.ValueLabel.ForeColor = color;
         }
 
         void IComponent.DrawHorizontal(Graphics g, LiveSplitState state, float height, Region clipRegion)
@@ -168,7 +170,6 @@ namespace ResetOrNot.UI.Components
         void PrepareDraw(LiveSplitState state, LayoutMode mode)
         {
             InternalComponent.NameLabel.ForeColor = state.LayoutSettings.TextColor;
-            InternalComponent.ValueLabel.ForeColor = state.LayoutSettings.TextColor;
             InternalComponent.PrepareDraw(state, mode);
         }
 

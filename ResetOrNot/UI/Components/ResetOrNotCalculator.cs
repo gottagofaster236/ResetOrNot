@@ -36,6 +36,18 @@ namespace ResetOrNot.UI.Components
             #endif
         }
 
+        public class ResetResult
+        {
+            public ResetAction ResetAction { get; set; }
+            public TimeSpan TimeBeforeReset { get; set; }
+
+            public static implicit operator ResetResult(ResetAction resetAction) => new ResetResult
+            {
+                ResetAction = resetAction
+            };
+            
+        }
+
         public enum ResetAction
         {
             CALCULATING,
@@ -45,7 +57,7 @@ namespace ResetOrNot.UI.Components
             NOT_APPLICABLE
         }
 
-        public ResetAction ShouldReset()
+        public ResetResult ShouldReset()
         {
             if (resetTimes == null)
             {
@@ -57,11 +69,18 @@ namespace ResetOrNot.UI.Components
             if (state.CurrentSplitIndex == -1)
                 return ResetAction.START_THE_RUN;
 
-            TimeSpan? currentTime = state.CurrentTime[state.CurrentTimingMethod];
-            if (currentTime < resetTimes[state.CurrentSplitIndex])
-                return ResetAction.CONTINUE_RUN;
-            else
+            TimeSpan currentTime = state.CurrentTime[state.CurrentTimingMethod].Value;
+            TimeSpan timeLeft = resetTimes[state.CurrentSplitIndex] - currentTime;
+            if (timeLeft > TimeSpan.Zero) {
+                return new ResetResult
+                {
+                    ResetAction = ResetAction.CONTINUE_RUN, 
+                    TimeBeforeReset = timeLeft 
+                };
+            }
+            else {
                 return ResetAction.RESET;
+            }
         }
 
         public void CalculateResetTimes()
