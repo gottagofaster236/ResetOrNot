@@ -9,3 +9,14 @@ C:\Users\Пользователь\source\repos\gottagofaster236\bin\Debug\Compon
 C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csproj.CopyComplete
 C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.dll
 C:\Users\Пользователь\source\repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.pdb
+C:\Users\user\Source\Repos\gottagofaster236\bin\Debug\Components\x86\livesplit_core.dll
+C:\Users\user\Source\Repos\gottagofaster236\bin\Debug\Components\x64\livesplit_core.dll
+C:\Users\user\Source\Repos\gottagofaster236\bin\Debug\Components\ResetOrNot.dll
+C:\Users\user\Source\Repos\gottagofaster236\bin\Debug\Components\ResetOrNot.pdb
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csprojAssemblyReference.cache
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.UI.Components.ResetOrNotSettings.resources
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csproj.GenerateResource.cache
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csproj.CoreCompileInputs.cache
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.csproj.CopyComplete
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.dll
+C:\Users\user\Source\Repos\gottagofaster236\ResetOrNot\ResetOrNot\obj\Debug\ResetOrNot.pdb

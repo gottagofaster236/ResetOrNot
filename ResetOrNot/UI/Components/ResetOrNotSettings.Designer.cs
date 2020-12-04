@@ -125,9 +125,9 @@
             this.AttemptsLabel.AutoSize = true;
             this.AttemptsLabel.Location = new System.Drawing.Point(184, 41);
             this.AttemptsLabel.Name = "AttemptsLabel";
-            this.AttemptsLabel.Size = new System.Drawing.Size(47, 13);
+            this.AttemptsLabel.Size = new System.Drawing.Size(108, 13);
             this.AttemptsLabel.TabIndex = 10;
-            this.AttemptsLabel.Text = "attempts";
+            this.AttemptsLabel.Text = "attempts per segment";
             // 
             // ResetOrNotSettings
             // 
