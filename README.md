@@ -13,7 +13,7 @@ Displays if you should reset or not at a given moment of time. Uses some fancy m
 
 ## Configuration screen:
 ![configuration_screen](https://user-images.githubusercontent.com/55288842/101182810-a9977300-365f-11eb-8d0a-8ce52eb48fa0.png)
-)
+
 
 ## Troubleshooting:
 
