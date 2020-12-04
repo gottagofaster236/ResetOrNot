@@ -22,19 +22,18 @@ namespace ResetOrNot.UI.Components
 
         private LiveSplitState state;
         private ResetOrNotSettings settings;
-        private Random rand;
         
 
         public ResetOrNotCalculator(LiveSplitState state, ResetOrNotSettings settings)
         {
             this.state = state;
             this.settings = settings;
-            this.rand = new Random();
             #if DEBUG
             AllocConsole();
             #endif
         }
 
+        // answer to the question if we should reset
         public class ResetResult
         {
             public ResetAction ResetAction { get; set; }
@@ -53,7 +52,7 @@ namespace ResetOrNot.UI.Components
             RUN_NOT_STARTED,
             CONTINUE_RUN,
             RESET,
-            NOT_APPLICABLE
+            NOT_APPLICABLE  // e.g. missing splits information
         }
 
         public ResetResult ShouldReset()
@@ -62,19 +61,19 @@ namespace ResetOrNot.UI.Components
             {
                 if (isRecalculating)
                     return ResetAction.CALCULATING;
-                else
+                else  // we finished our calculation but did not get the reset times - something went wrong
                     return ResetAction.NOT_APPLICABLE;
             }
             if (state.CurrentSplitIndex == -1)
                 return ResetAction.RUN_NOT_STARTED;
 
             TimeSpan currentTime = state.CurrentTime[state.CurrentTimingMethod].Value;
-            TimeSpan timeLeft = resetTimes[state.CurrentSplitIndex] - currentTime;
-            if (timeLeft > TimeSpan.Zero) {
+            TimeSpan timeBeforeReset = resetTimes[state.CurrentSplitIndex] - currentTime;
+            if (timeBeforeReset > TimeSpan.Zero) {
                 return new ResetResult
                 {
                     ResetAction = ResetAction.CONTINUE_RUN, 
-                    TimeBeforeReset = timeLeft 
+                    TimeBeforeReset = timeBeforeReset 
                 };
             }
             else {
@@ -103,7 +102,7 @@ namespace ResetOrNot.UI.Components
                 isRecalculating = true;
                 HasDoneCalculatingBefore = true;
 
-                if (!settings.SettingsLoaded)  // sometimes we have to wait before the settings get loaded
+                if (!settings.SettingsLoaded)  // we have to wait before the settings get loaded
                 {
                     isRecalculating = false;
                     return;
@@ -129,22 +128,32 @@ namespace ResetOrNot.UI.Components
                     isRecalculating = false;
                     return;
                 }
+                else if (PB < minSplitTimes.Last())
+                {
+                    // we can't PB
+                    resetTimes = null;
+                    return;
+                }
 
                 string categoryWhenCalculationStarted = category;
-                
-                // finding the reset times configuration with best avg PB time
-                TimeSpan resetTimesPBTime = TimeSpan.MaxValue;
 
-                TimeSpan targetPBTime = infiniteTimeSpan;
+                // finding the reset times configuration with the best (average) time to PB
                 // targetPBTime is estimated time needed to PB (sum of unsuccessful runs + the successful one)
+                TimeSpan resetTimesPBTime = TimeSpan.MaxValue;
+                TimeSpan targetPBTime = infiniteTimeSpan;
+                
                 for (int iteration = 0; iteration < 10; iteration++)
                 {
                     TimeSpan[] resultResetTimes = CalculateResetTimes(targetPBTime);
-                    SimulationResult result = GetSimulationResult(-1, TimeSpan.Zero);
-                    targetPBTime = Divide(result.AverageResetTimeSave, result.PbProbability) + PB;
-                    // We assume that PB happens in (1 / pbProbability) attempts. Thus, the avg time to PB is the above formula.
 
-                    if (categoryWhenCalculationStarted != category)  // category was changed - have to redo everything
+                    SimulationResult result = GetSimulationResult(-1, TimeSpan.Zero);
+                    double resetProbability = 1 - result.PbProbability;
+                    TimeSpan averageTimeBeforeReset = Divide(result.AverageResetTimeSave, resetProbability);
+
+                    // We assume that a PB happens in (1 / pbProbability) attempts. Thus, the average time to PB is this formula:
+                    targetPBTime = Divide(averageTimeBeforeReset, result.PbProbability) + PB;
+
+                    if (categoryWhenCalculationStarted != category)  // category was changed during calculation
                         return;
 
                     if (targetPBTime < resetTimesPBTime)
@@ -154,12 +163,13 @@ namespace ResetOrNot.UI.Components
                     }
 
                     // Debug prints
-                    foreach (TimeSpan time in resultResetTimes)
+                    for (int i = 0; i < segments.Length; i++)
                     {
-                        Console.WriteLine("Reset time: " + time);
+                        TimeSpan time = resetTimes[i];
+                        Console.WriteLine($"Reset time: +{time - state.Run[i].PersonalBestSplitTime[state.CurrentTimingMethod]}");
                     }
                     Console.WriteLine("PB probability: " + result.PbProbability);
-                    Console.WriteLine("average reset time: " + result.AverageResetTimeSave);
+                    Console.WriteLine("average reset time: " + averageTimeBeforeReset);
                     Console.WriteLine("targetPBTime: " + targetPBTime);
                 }
 
@@ -204,7 +214,7 @@ namespace ResetOrNot.UI.Components
         {
             SimulationResult result = GetSimulationResult(segment, currentTime);
             // If we play a no-reset run, then with a probability of (1 - pbProbability) it would reset.
-            // If we reset now, we will save (on average) averageTimeBeforeReset.
+            // If we reset now, we will save (on average) AverageResetTimeSave.
             // But we can lose the time to get a PB (if we reset a run that would otherwise PB).
             TimeSpan resetTimeSave = result.AverageResetTimeSave;
             TimeSpan pbTimeLoss = Multiply(targetPBTime, result.PbProbability);
@@ -218,14 +228,17 @@ namespace ResetOrNot.UI.Components
             public double PbProbability { get; set; } = 0;
         }
 
-        private void UpdateSimulationResults(int segment, TimeSpan newResetTime)
+        private void UpdateSimulationResults(int segment, TimeSpan newResetTime)  // Call when we calculated a reset time for a split
         {
+            // calculate the probabilities for each possible case
             int attemptsCount = segments[segment].Count;
             TimeSpan minTime = minSplitTimes.ElementAtOrDefault(segment - 1);
             TimeSpan maxTime = maxSplitTimes.ElementAtOrDefault(segment - 1);
 
             for (TimeSpan curTime = minTime; curTime <= maxTime; curTime += TimeSpan.FromMilliseconds(100))
             {
+                // calculating the probabilities: if at the end of segment {segment - 1} the timer shows {curTime}, what are our chances?
+
                 SimulationResult simulationResult = new SimulationResult();
                 TimeSpan timeBeforeResetSum = TimeSpan.Zero;  // calculating average time before reset
 
@@ -239,6 +252,7 @@ namespace ResetOrNot.UI.Components
 
                     if (segmentAttempt == null || timeIfNotReset >= newResetTime)
                     {
+                        // it's a reset
                         TimeSpan timeBeforeReset = newResetTime - curTime + TimeSpan.FromSeconds(settings.TimeToReset);
                         timeBeforeResetSum += timeBeforeReset;
                     }
@@ -258,6 +272,7 @@ namespace ResetOrNot.UI.Components
                     }
                 }
 
+                // we're calculating the average of all the possible cases - have to divide by attemptsCount.
                 simulationResult.PbProbability /= attemptsCount;
                 simulationResult.AverageResetTimeSave = Divide(timeBeforeResetSum, attemptsCount);
 
@@ -266,7 +281,7 @@ namespace ResetOrNot.UI.Components
         }
 
 
-        // List of attempts for each split, or null if not enough information
+        // Get list of attempts for each split, or null if not enough information
         private List<TimeSpan?>[] GetSegmentTimes()
         {
             // Create the lists of split times
@@ -417,7 +432,7 @@ namespace ResetOrNot.UI.Components
             CalculateResetTimes();
         }
 
-        // Debug stuff
+        // Open up console for debugging
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

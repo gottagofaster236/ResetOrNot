@@ -97,7 +97,7 @@
             this.TimeToResetCountBox.Size = new System.Drawing.Size(51, 20);
             this.TimeToResetCountBox.TabIndex = 7;
             this.TimeToResetCountBox.Value = new decimal(new int[] {
-            15,
+            30,
             0,
             0,
             0});

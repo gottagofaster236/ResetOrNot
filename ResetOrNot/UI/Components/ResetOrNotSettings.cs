@@ -18,7 +18,7 @@ namespace ResetOrNot.UI.Components
             InitializeComponent();
 
             AttemptCount = 50;
-            TimeToReset = 25;
+            TimeToReset = 30;
 
             AttemptCountBox.DataBindings.Add("Value", this, "AttemptCount", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
             TimeToResetCountBox.DataBindings.Add("Value", this, "TimeToReset", true, DataSourceUpdateMode.OnPropertyChanged).BindingComplete += OnSettingChanged;
