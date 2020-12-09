@@ -7,8 +7,8 @@ Displays if you should reset or not at a given moment of time. Uses some fancy m
 ## Installation:
 
 1. Place [ResetOrNot.dll](https://github.com/gottagofaster236/ResetOrNot/releases/latest) into the Components directory of your LiveSplit installation.
-2. Open LiveSplit. Right click -> Edit Layout -> [Giant "+" Button] -> Information -> ResetOrNot
-3. You can configure how many of your most recent attempts will be used to calculate whether you should reset or not. Go to Layout Settings and click on the ResetOrNot tab. You can either have it use a percentage of your most recent attempts, or just a fixed number of your most recent attempts.
+2. Open LiveSplit. Right click → Edit Layout → [Giant "+" Button] → Information → ResetOrNot
+3. You can configure how many of your most recent attempts will be used to calculate whether you should reset or not. Go to Layout Settings and click on the ResetOrNot tab.
 4. Speedrun!
 
 ## Configuration screen:
